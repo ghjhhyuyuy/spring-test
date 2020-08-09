@@ -13,6 +13,7 @@ import com.thoughtworks.rslist.repository.VoteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.Optional;
 
 @Service
@@ -52,20 +53,25 @@ public class RsService {
     rsEvent.setVoteNum(rsEvent.getVoteNum() + vote.getVoteNum());
     rsEventRepository.save(rsEvent);
   }
-
+  @Transactional
   public void buy(Trade trade, int id) throws Exception {
     Optional<RsEventDto> optionalRsEventDto = rsEventRepository.findById(id);
     RsEventDto rsEventDto = new RsEventDto();
     if(optionalRsEventDto.isPresent()){
       rsEventDto = optionalRsEventDto.get();
     }
+
     TradeDto tradeDto = TradeDto.builder().amount(trade.getAmount()).rank(trade.getRank()).rsEventDto(rsEventDto).build();
     TradeDto originTradeDto = tradeRepository.findByRank(tradeDto.getRank());
     if(originTradeDto == null){
       tradeRepository.save(tradeDto);
+      rsEventDto.setRank(tradeDto.getRank());
+      rsEventRepository.save(rsEventDto);
     }else if(originTradeDto.getAmount() < tradeDto.getAmount()){
       tradeRepository.save(tradeDto);
-      tradeRepository.deleteById(originTradeDto.getId());
+      rsEventRepository.deleteById(originTradeDto.getRsEventDto().getId());
+      rsEventDto.setRank(tradeDto.getRank());
+      rsEventRepository.save(rsEventDto);
     }else {
       throw new Exception("amount less than origin");
     }

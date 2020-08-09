@@ -8,6 +8,7 @@ import com.thoughtworks.rslist.dto.UserDto;
 import com.thoughtworks.rslist.exception.Error;
 import com.thoughtworks.rslist.exception.RequestNotValidException;
 import com.thoughtworks.rslist.repository.RsEventRepository;
+import com.thoughtworks.rslist.repository.TradeRepository;
 import com.thoughtworks.rslist.repository.UserRepository;
 import com.thoughtworks.rslist.service.RsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,14 +97,14 @@ public class RsController {
   }
 
   @PostMapping("/rs/buy/{id}")
-  public ResponseEntity buy(@PathVariable int id, @RequestBody Trade trade){
+  public ResponseEntity buy(@PathVariable int id, @RequestBody Trade trade) throws Exception {
     rsService.buy(trade, id);
     return ResponseEntity.ok().build();
   }
 
 
-  @ExceptionHandler(RequestNotValidException.class)
-  public ResponseEntity<Error> handleRequestErrorHandler(RequestNotValidException e) {
+  @ExceptionHandler({RequestNotValidException.class,Exception.class})
+  public ResponseEntity<Error> handleRequestErrorHandler(Exception e) {
     Error error = new Error();
     error.setError(e.getMessage());
     return ResponseEntity.badRequest().body(error);

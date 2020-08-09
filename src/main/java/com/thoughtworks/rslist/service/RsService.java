@@ -59,6 +59,8 @@ public class RsService {
     RsEventDto rsEventDto = new RsEventDto();
     if(optionalRsEventDto.isPresent()){
       rsEventDto = optionalRsEventDto.get();
+    }else {
+      throw new Exception("wrong rsEventId");
     }
 
     TradeDto tradeDto = TradeDto.builder().amount(trade.getAmount()).rank(trade.getRank()).rsEventDto(rsEventDto).build();
@@ -69,6 +71,7 @@ public class RsService {
       rsEventRepository.save(rsEventDto);
     }else if(originTradeDto.getAmount() < tradeDto.getAmount()){
       tradeRepository.save(tradeDto);
+      tradeRepository.deleteById(originTradeDto.getId());
       rsEventRepository.deleteById(originTradeDto.getRsEventDto().getId());
       rsEventDto.setRank(tradeDto.getRank());
       rsEventRepository.save(rsEventDto);

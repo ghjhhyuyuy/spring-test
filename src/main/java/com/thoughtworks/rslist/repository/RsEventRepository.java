@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 public interface RsEventRepository extends CrudRepository<RsEventDto, Integer> {
-  @Query(value = "select * from rs_event_dto order by rank", nativeQuery = true)
+  @Query(value = "select * from rs_event order by rank", nativeQuery = true)
   List<RsEventDto> findAll();
 
   @Transactional

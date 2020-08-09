@@ -1,9 +1,12 @@
 package com.thoughtworks.rslist.api;
 
+import com.thoughtworks.rslist.domain.Trade;
 import com.thoughtworks.rslist.dto.RsEventDto;
+import com.thoughtworks.rslist.dto.TradeDto;
 import com.thoughtworks.rslist.dto.UserDto;
 import com.thoughtworks.rslist.dto.VoteDto;
 import com.thoughtworks.rslist.repository.RsEventRepository;
+import com.thoughtworks.rslist.repository.TradeRepository;
 import com.thoughtworks.rslist.repository.UserRepository;
 import com.thoughtworks.rslist.repository.VoteRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,11 +38,14 @@ class RsControllerTest {
   @Autowired UserRepository userRepository;
   @Autowired RsEventRepository rsEventRepository;
   @Autowired VoteRepository voteRepository;
+  @Autowired
+  TradeRepository tradeRepository;
   private UserDto userDto;
 
   @BeforeEach
   void setUp() {
     voteRepository.deleteAll();
+    tradeRepository.deleteAll();
     rsEventRepository.deleteAll();
     userRepository.deleteAll();
     userDto =
@@ -184,5 +190,60 @@ class RsControllerTest {
     List<VoteDto> voteDtos =  voteRepository.findAll();
     assertEquals(voteDtos.size(), 1);
     assertEquals(voteDtos.get(0).getNum(), 1);
+  }
+  @Test
+  void shouldBuyRsEventWhenNoCompetition() throws Exception {
+    UserDto save = userRepository.save(userDto);
+    RsEventDto rsEventDto =
+            RsEventDto.builder().keyword("无分类").eventName("第一条事件").user(save).build();
+    rsEventDto = rsEventRepository.save(rsEventDto);
+    String jsonValue = "{\"amount\":400,\"rank\":1}";
+    mockMvc.perform(post("/rs/buy/"+rsEventDto.getId()).content(jsonValue).contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk());
+    List<TradeDto> tradeDtoList = tradeRepository.findAll();
+    assertEquals(1,tradeDtoList.size());
+  }
+  @Test
+  void shouldBuyRsEventWhenAmountBetter() throws Exception {
+    UserDto save = userRepository.save(userDto);
+    RsEventDto rsEventDto =
+            RsEventDto.builder().keyword("无分类").eventName("第一条事件").user(save).build();
+    RsEventDto rsEventDtoNew =
+            RsEventDto.builder().keyword("经济").eventName("大爆炸").user(save).build();
+    rsEventDto = rsEventRepository.save(rsEventDto);
+    rsEventDtoNew = rsEventRepository.save(rsEventDtoNew);
+    String jsonValue = "{\"amount\":400,\"rank\":1}";
+    TradeDto tradeDto = TradeDto.builder().amount(200).rank(1).rsEventDto(rsEventDto).build();
+    tradeRepository.save(tradeDto);
+    mockMvc.perform(post("/rs/buy/"+rsEventDtoNew.getId()).content(jsonValue).contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk());
+    List<TradeDto> tradeDtoList = tradeRepository.findAll();
+    assertEquals(1,tradeDtoList.size());
+    assertEquals(400,tradeDtoList.get(0).getAmount());
+  }
+  @Test
+  void shouldReturn400WhenAmountFewer() throws Exception {
+    UserDto save = userRepository.save(userDto);
+    RsEventDto rsEventDto =
+            RsEventDto.builder().keyword("无分类").eventName("第一条事件").user(save).build();
+    RsEventDto rsEventDtoNew =
+            RsEventDto.builder().keyword("经济").eventName("大爆炸").user(save).build();
+    rsEventDto = rsEventRepository.save(rsEventDto);
+    rsEventDtoNew = rsEventRepository.save(rsEventDtoNew);
+    String jsonValue = "{\"amount\":400,\"rank\":1}";
+    TradeDto tradeDto = TradeDto.builder().amount(600).rank(1).rsEventDto(rsEventDto).build();
+    tradeRepository.save(tradeDto);
+    mockMvc.perform(post("/rs/buy/"+rsEventDtoNew.getId()).content(jsonValue).contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isBadRequest());
+  }
+  @Test
+  void shouldReturn400WhenRsEventIdWrong() throws Exception {
+    UserDto save = userRepository.save(userDto);
+    RsEventDto rsEventDto =
+            RsEventDto.builder().keyword("无分类").eventName("第一条事件").user(save).build();
+    rsEventDto = rsEventRepository.save(rsEventDto);
+    String jsonValue = "{\"amount\":400,\"rank\":1}";
+    mockMvc.perform(post("/rs/buy/"+rsEventDto.getId()+1).content(jsonValue).contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isBadRequest());
   }
 }

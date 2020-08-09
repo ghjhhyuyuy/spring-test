@@ -46,6 +46,7 @@ public class RsController {
                         .keyword(item.getKeyword())
                         .userId(item.getId())
                         .voteNum(item.getVoteNum())
+                            .rank(item.getRank())
                         .build())
             .collect(Collectors.toList());
     if (start == null || end == null) {
@@ -65,6 +66,7 @@ public class RsController {
                         .keyword(item.getKeyword())
                         .userId(item.getId())
                         .voteNum(item.getVoteNum())
+                            .rank(item.getRank())
                         .build())
             .collect(Collectors.toList());
     if (index < 1 || index > rsEvents.size()) {
@@ -85,6 +87,7 @@ public class RsController {
             .eventName(rsEvent.getEventName())
             .voteNum(0)
             .user(userDto.get())
+                .rank(rsEvent.getRank())
             .build();
     rsEventRepository.save(build);
     return ResponseEntity.created(null).build();
